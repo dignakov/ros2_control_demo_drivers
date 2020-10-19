@@ -80,11 +80,23 @@ private:
   std::vector<double> hw_commands_, hw_states_;
 
 
-  // lib_eng things
+  // EGM things
+  const int egm_rate_ = 250.0;
+  int sequence_number_ = 0;
+  double time = 0.0;          // [seconds] (elapsed time during an EGM communication session).
+  double last_time = 0.0;
+
   boost::asio::io_service io_service_;
   boost::thread_group thread_group_; //NOTE
-  //abb::egm::EGMControllerInterface *egm_interface_; //(io_service, 6511);
   std::unique_ptr<abb::egm::EGMControllerInterface> egm_interface_;
+  
+  abb::egm::wrapper::Input input_;
+  abb::egm::wrapper::Output output_;
+  abb::egm::wrapper::Output output_pos_;
+  abb::egm::wrapper::Output output_vel_;
+  abb::egm::wrapper::Joints current_positions_;
+  abb::egm::wrapper::Joints current_velocities_;
+  abb::egm::wrapper::Joints initial_positions_;
 
 };
 
