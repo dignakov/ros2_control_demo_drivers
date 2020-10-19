@@ -1,0 +1,9 @@
+<library path="ros2_control_demo_driver">
+  <class name="ros2_control_demo_driver/Robot6DofSystemHardware"
+         type="ros2_control_demo_driver::Robot6DofSystemHardware"
+         base_class_type="hardware_interface::SystemHardwareInterface">
+    <description>
+		ROS2 Control System Driver for a 6DFO Robot.
+    </description>
+  </class>
+</library>

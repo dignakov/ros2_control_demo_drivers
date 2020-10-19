@@ -25,22 +25,40 @@ find_package(ros2_control_demo_hardware REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
-#add_library(
-	#abb_robot_hardware
-	#SHARED
-	#src/abb_robot_hardware.cpp
-#)
-#target_include_directories(
-	#abb_robot_hardware
-	#PRIVATE
-	#include
-#)
-#ament_target_dependencies(
-  #abb_robot_hardware
-  #hardware_interface
-  #pluginlib
-  #rclcpp
-#)
+add_subdirectory(../abb_libegm deps_libegm)
+
+add_library(
+	ros2_control_demo_driver
+	SHARED
+	src/robot6dof_demo_system.cpp
+)
+target_include_directories(
+	ros2_control_demo_driver
+	PRIVATE
+	include
+)
+# NOT SURE IF THIS IS THE RIGHT WAY TO DO THIS...
+target_link_libraries(
+	ros2_control_demo_driver
+	abb_libegm
+)
+ament_target_dependencies(
+  ros2_control_demo_driver
+  hardware_interface
+  pluginlib
+  rclcpp
+)
+pluginlib_export_plugin_description_file(hardware_interface ros2_control_demo_driver.xml)
+
+
+install(
+  TARGETS ros2_control_demo_driver
+  DESTINATION lib
+)
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
 
 install(
   DIRECTORY controllers description launch/
@@ -57,5 +75,17 @@ if(BUILD_TESTING)
   #set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+ament_export_include_directories(
+  include
+)
+ament_export_libraries(
+	ros2_control_demo_driver
+)
+ament_export_dependencies(
+  hardware_interface
+  pluginlib
+  rclcpp
+)
 
 ament_package()
