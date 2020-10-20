@@ -143,7 +143,7 @@ return_type Robot6DofSystemHardware::start()
 	output_pos_.mutable_robot()->mutable_joints()->mutable_position()->CopyFrom(current_positions_);
 
 	for(size_t jid=0; jid<hw_states_.size();jid++){
-		//save data
+		//save data QQQ what is hw_states_ if we have joints...
 		hw_states_[jid] = current_positions_.values(jid)/180.0*3.14157;
 		hw_commands_[jid] = current_positions_.values(jid)/180.0*3.14157;
 	}
@@ -195,60 +195,62 @@ return_type Robot6DofSystemHardware::read_joints(std::vector<std::shared_ptr<Joi
     abb::egm::wrapper::Joints tmp_current_positions;
 
 	egm_interface_->read(&tmp_input);
-    tmp_current_positions.CopyFrom(input_.feedback().robot().joints().position());
+    tmp_current_positions.CopyFrom(tmp_input.feedback().robot().joints().position());
     //int cur_sequence_number = tmp_input.header().sequence_number();
 
-  // TODO(all): Should we check here joint names for the proper order?
-  // QQQ How/why is it this way?
-  std::vector<double> values;
-  values.resize(1);
-  for (uint i = 0; i < joints.size(); i++) {
-    values[0] = tmp_current_positions.values(i)/180.0*3.14159;;
-    RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "Got state %.5f for joint %d!", values[0], i);
-    ret = joints[i]->set_state(values);
-    if (ret != return_type::OK) {
-      break;
-    }
-  }
+  	// TODO(all): Should we check here joint names for the proper order?
+  	// QQQ How/why is it this way?
+  	std::vector<double> values;
+  	values.resize(1);
+  	for (uint i = 0; i < joints.size(); i++) {
+    	values[0] = tmp_current_positions.values(i)/180.0*3.14159;
+    	RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "Got state %.5f for joint %d!", values[0], i);
+    	ret = joints[i]->set_state(values);
+    	if (ret != return_type::OK) {
+      		break;
+    	}
+  	}
 
-  RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"),
-    "Joints sucessfully read!");
-  return ret;
+  	RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "Joints sucessfully read!");
+  	return ret;
 }
 
-return_type Robot6DofSystemHardware::write_joints(
-  const std::vector<std::shared_ptr<Joint>> & joints)
+//QQQ but this isn't const?
+return_type Robot6DofSystemHardware::write_joints(const std::vector<std::shared_ptr<Joint>> & joints)
 {
-  if (joints.size() != hw_commands_.size()) {
-    // TODO(all): return wrong number of joints
-    return return_type::ERROR;
-  }
+	if (joints.size() != hw_commands_.size()) {
+    	// TODO(all): return wrong number of joints
+    	return return_type::ERROR;
+	}
 
-  return_type ret = return_type::OK;
+  	return_type ret = return_type::OK;
+  	RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "Writing...");
 
-  RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"),
-    "Writing...");
+  	// TODO(all): Should we check here the joint names for the proper order?
+  	std::vector<double> values;
+  	for (uint i = 0; i < joints.size(); i++) {
+    	ret = joints[i]->get_command(values);
+    	if (ret != return_type::OK) {
+      		break;
+    	}
+    	RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "Got command %.5f for joint %d!", values[0], i);
+    	// Simulate sending commands to the hardware
+        //hw_commands_[i] = values[0];
+		output_pos_.mutable_robot()->mutable_joints()->mutable_position()->set_values(i, (values[0]*180.0/3.14159));
+  	}
+	egm_interface_->write(output_pos_);
 
-  // TODO(all): Should we check here the joint names for the proper order?
-  std::vector<double> values;
-  for (uint i = 0; i < joints.size(); i++) {
-    ret = joints[i]->get_command(values);
-    if (ret != return_type::OK) {
-      break;
-    }
-    RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"),
-      "Got command %.5f for joint %d!", values[0], i);
-    // Simulate sending commands to the hardware
-    hw_commands_[i] = values[0];
-  }
-  RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"),
-    "Joints sucessfully written!");
+    //for (uint i = 0; i < hw_states_.size(); i++) {
+		//output_pos_.mutable_robot()->mutable_joints()->mutable_position()->set_values(i, (hw_commands_[i]*180.0/3.14159));
+	//}
+  	
+	RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "Joints sucessfully written!");
 
-  // TODO(denis): add this into separate timed loop
-  for (uint i = 0; i < hw_states_.size(); i++) {
-    // Simulate robot's movement
-    hw_states_[i] = hw_commands_[i] + (hw_states_[i] - hw_commands_[i]) / hw_slowdown_;
-  }
+      //// TODO(denis): add this into separate timed loop
+      //for (uint i = 0; i < hw_states_.size(); i++) {
+        //// Simulate robot's movement
+        //hw_states_[i] = hw_commands_[i] + (hw_states_[i] - hw_commands_[i]) / hw_slowdown_;
+      //}
 
   return ret;
 }
