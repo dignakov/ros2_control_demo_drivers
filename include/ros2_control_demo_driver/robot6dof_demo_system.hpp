@@ -85,6 +85,7 @@ private:
   int sequence_number_ = 0;
   double time = 0.0;          // [seconds] (elapsed time during an EGM communication session).
   double last_time = 0.0;
+  bool ready_to_write_ = false;
 
   boost::asio::io_service io_service_;
   boost::thread_group thread_group_; //NOTE

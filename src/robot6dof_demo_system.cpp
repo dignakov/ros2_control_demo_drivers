@@ -80,21 +80,14 @@ return_type Robot6DofSystemHardware::configure(const HardwareInfo & system_info)
 
 return_type Robot6DofSystemHardware::start()
 {
-  RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"),
-    "Starting ...please wait...");
+	RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"),
+	"Starting ...please wait...");
 
-  //for (int i = 0; i <= hw_start_sec_; i++) {
-    //rclcpp::sleep_for(std::chrono::seconds(1));
-    //RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"),
-      //"%.1f seconds left...", hw_start_sec_ - i);
-  //}
-
-
-  //EGM
+  	//EGM
     thread_group_.create_thread(boost::bind(&boost::asio::io_service::run, &io_service_));
 
 	bool wait=true;
-	int num_tries = 3;
+	int num_tries = 100;
 	int counter = 0;
   	RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "Connecting to Robot...");
 	while(wait && counter++ < num_tries){
@@ -121,25 +114,51 @@ return_type Robot6DofSystemHardware::start()
 		exit(EXIT_FAILURE); // HACK FOR NOW
 		return return_type::ERROR; // TODO: this does not seem to stop anything, and the code continues to read/write
 	}
+  	RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "CONNECTED!");
 
 
+	//READ CURRENT ANGLES
+	
+    if(!egm_interface_->waitForMessage(500)){ //in [ms]
+		RCLCPP_FATAL(rclcpp::get_logger("Robot6DofSystemHardware"), "NO Message Received");
+		exit(EXIT_FAILURE); // HACK FOR NOW
+		return return_type::ERROR; // TODO: this does not seem to stop anything, and the code continues to read/write
+	}
 
 
+	egm_interface_->read(&input_);
+	sequence_number_ = input_.header().sequence_number();
+
+	if(sequence_number_ <= 0){
+		RCLCPP_FATAL(rclcpp::get_logger("Robot6DofSystemHardware"), "Sequence number < 0");
+		exit(EXIT_FAILURE); // HACK FOR NOW
+		return return_type::ERROR; // TODO: this does not seem to stop anything, and the code continues to read/write
+	}
+
+	output_.Clear();
+	output_pos_.Clear();
+	current_positions_.CopyFrom(input_.feedback().robot().joints().position());
+
+	if(current_positions_.values_size() != hw_states_.size()){
+		RCLCPP_FATAL(rclcpp::get_logger("Robot6DofSystemHardware"), "Robot does not match expected number of joints");
+		exit(EXIT_FAILURE); // HACK FOR NOW
+		return return_type::ERROR; // TODO: this does not seem to stop anything, and the code continues to read/write
+	}
+
+	output_.mutable_robot()->mutable_joints()->mutable_position()->CopyFrom(current_positions_);
+	output_pos_.mutable_robot()->mutable_joints()->mutable_position()->CopyFrom(current_positions_);
+
+	for(size_t jid=0; jid<hw_states_.size();jid++){
+		//save data
+		hw_states_[jid] = current_positions_.values(jid)/180.0*3.14157;
+		hw_commands_[jid] = current_positions_.values(jid)/180.0*3.14157;
+	}
 
 
-
-  // set some default values
-  for (uint i = 0; i < hw_states_.size(); i++) {
-    if (std::isnan(hw_states_[i])) {
-      hw_states_[i] = 0;
-      hw_commands_[i] = 0;
-    }
-  }
-
-  status_ = hardware_interface_status::STARTED;
-  RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"),
-    "System Sucessfully started!");
-  return return_type::OK;
+	status_ = hardware_interface_status::STARTED;
+	RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"),
+	"System Sucessfully started!");
+	return return_type::OK;
 }
 
 return_type Robot6DofSystemHardware::stop()
