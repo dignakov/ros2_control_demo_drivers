@@ -67,7 +67,7 @@ return_type Robot6DofSystemHardware::configure(const HardwareInfo & system_info)
 	{
   		RCLCPP_FATAL(rclcpp::get_logger("Robot6DofSystemHardware"),
 				"EGM UDP Server interface failed to initialize (e.g. due to port already bound)");
-      	return return_type::ERROR; //TODO: this does not seem to have an effect
+      	return return_type::ERROR;
 	}
 
 
@@ -91,20 +91,15 @@ return_type Robot6DofSystemHardware::start()
 	int counter = 0;
   	RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "Connecting to Robot...");
 	while(wait && counter++ < num_tries){
-        if(egm_interface_->isConnected())
-        {
+        if(egm_interface_->isConnected()){
   			RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "Connected to Robot");
-            if(egm_interface_->getStatus().rapid_execution_state() == abb::egm::wrapper::Status_RAPIDExecutionState_RAPID_UNDEFINED)
-            {
+            if(egm_interface_->getStatus().rapid_execution_state() == abb::egm::wrapper::Status_RAPIDExecutionState_RAPID_UNDEFINED){
   				RCLCPP_WARN(rclcpp::get_logger("Robot6DofSystemHardware"),
 						"configure RAPID execution state is UNDEFINED (might happen first time after controller start/restart). Try to restart the RAPID program.");
-            }
-            else
-            {
+            }else{
                 wait = egm_interface_->getStatus().rapid_execution_state() != abb::egm::wrapper::Status_RAPIDExecutionState_RAPID_RUNNING;
             }
-        }
-        else {
+        }else{
   			RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "Not Connected to Robot...");
         }
 		rclcpp::sleep_for(500ms);
@@ -117,8 +112,7 @@ return_type Robot6DofSystemHardware::start()
   	RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "CONNECTED!");
 
 
-	//READ CURRENT ANGLES
-	
+	//SET INITIAL STATE TO CURRENT ANGLES, error if something isn't right
     if(!egm_interface_->waitForMessage(500)){ //in [ms]
 		RCLCPP_FATAL(rclcpp::get_logger("Robot6DofSystemHardware"), "NO Message Received");
 		exit(EXIT_FAILURE); // HACK FOR NOW
@@ -173,7 +167,7 @@ return_type Robot6DofSystemHardware::stop()
   }
 
 
-  	//EGM
+  	//EGM TODO: what's left?
     io_service_.stop();
     thread_group_.join_all();
 
@@ -185,26 +179,32 @@ return_type Robot6DofSystemHardware::stop()
   return return_type::OK;
 }
 
-return_type Robot6DofSystemHardware::read_joints(
-  std::vector<std::shared_ptr<Joint>> & joints) const
+// QQQ why is this constant???
+return_type Robot6DofSystemHardware::read_joints(std::vector<std::shared_ptr<Joint>> & joints) const
 {
-  if (joints.size() != hw_states_.size()) {
-    // TODO(all): shoudl we return "wrong number of joints" error?
-    return return_type::ERROR;
-  }
+	if (joints.size() != hw_states_.size()) {
+		// TODO(all): shoudl we return "wrong number of joints" error?
+		return return_type::ERROR;
+	}
 
-  return_type ret = return_type::OK;
+	return_type ret = return_type::OK;
+  	RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"),"Reading...");
 
-  RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"),
-    "Reading...");
+
+  	abb::egm::wrapper::Input tmp_input;
+    abb::egm::wrapper::Joints tmp_current_positions;
+
+	egm_interface_->read(&tmp_input);
+    tmp_current_positions.CopyFrom(input_.feedback().robot().joints().position());
+    //int cur_sequence_number = tmp_input.header().sequence_number();
 
   // TODO(all): Should we check here joint names for the proper order?
+  // QQQ How/why is it this way?
   std::vector<double> values;
   values.resize(1);
   for (uint i = 0; i < joints.size(); i++) {
-    values[0] = hw_states_[i];
-    RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"),
-      "Got state %.5f for joint %d!", values[0], i);
+    values[0] = tmp_current_positions.values(i)/180.0*3.14159;;
+    RCLCPP_INFO(rclcpp::get_logger("Robot6DofSystemHardware"), "Got state %.5f for joint %d!", values[0], i);
     ret = joints[i]->set_state(values);
     if (ret != return_type::OK) {
       break;
