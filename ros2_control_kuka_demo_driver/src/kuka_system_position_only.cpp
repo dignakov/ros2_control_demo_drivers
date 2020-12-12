@@ -67,6 +67,20 @@ return_type KukaSystemPositionOnlyHardware::configure(const hardware_interface::
 
 	}
 
+
+
+	//RSI
+	in_buffer_.resize(1024);
+	out_buffer_.resize(1024);
+	remote_host_.resize(1024);
+	remote_port_.resize(1024);
+
+  	local_host_ = info_.hardware_parameters["listen_address"];
+	local_port_ = stoi(info_.hardware_parameters["listen_port"]);
+
+	RCLCPP_INFO(rclcpp::get_logger("KukaSystemPositionOnlyHardware"),
+	"robot location: %s:%d", local_host_.c_str(), local_port_);
+
 	//done
 	status_ = hardware_interface::status::CONFIGURED;
 	return return_type::OK;
@@ -109,7 +123,30 @@ return_type KukaSystemPositionOnlyHardware::start()  // QUESTION: should this be
 	RCLCPP_INFO(rclcpp::get_logger("KukaSystemPositionOnlyHardware"),
 	"Starting ...please wait...");
 
+	// Wait for connection from robot
+	server_.reset(new UDPServer(local_host_, local_port_));
 
+	RCLCPP_INFO(rclcpp::get_logger("KukaSystemPositionOnlyHardware"),
+	"Connecting to robot . . .");
+
+	int bytes = server_->recv(in_buffer_);
+
+	// Drop empty <rob> frame with RSI <= 2.3
+	if(bytes < 100){
+		bytes = server_->recv(in_buffer_);
+	}
+
+	rsi_state_ = kuka_rsi_hw_interface::RSIState(in_buffer_);
+	for (size_t i = 0; i < hw_states_.size(); ++i){
+		hw_states_[i] = rsi_state_.positions[i] * 3.14159/180.0;
+		hw_commands_[i] = hw_states_[i];
+		rsi_initial_joint_positions_[i] = rsi_state_.initial_positions[i];
+	}
+
+	ipoc_ = rsi_state_.ipoc;
+	out_buffer_ = kuka_rsi_hw_interface::RSICommand(rsi_joint_position_corrections_, ipoc_).xml_doc;
+	server_->send(out_buffer_);
+	server_->set_timeout(1000); // Set receive timeout to 1 second
 
 	RCLCPP_INFO(rclcpp::get_logger("KukaSystemPositionOnlyHardware"),
 	"System Sucessfully started!");

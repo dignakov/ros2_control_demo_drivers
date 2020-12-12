@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/macros.hpp"
@@ -75,6 +76,9 @@ private:
 	std::string out_buffer_;
 
 	double loop_hz_;
+	//double control_period_;
+	std::chrono::steady_clock::time_point time_now_, time_last_;
+	std::chrono::duration<double> control_period_, elapsed_time_;
 	//rclcpp::Duration control_period_;
 	//rclcpp::Duration elapsed_time_;
 
