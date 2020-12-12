@@ -142,7 +142,6 @@ return_type KukaSystemPositionOnlyHardware::start()  // QUESTION: should this be
 	if(bytes < 100){
 		bytes = server_->recv(in_buffer_);
 	}
-
 	if(bytes < 100){
 		RCLCPP_FATAL(rclcpp::get_logger("KukaSystemPositionOnlyHardware"),
 		"not enough data received");
@@ -150,17 +149,15 @@ return_type KukaSystemPositionOnlyHardware::start()  // QUESTION: should this be
 	}
 
 
-
 	rsi_state_ = kuka_rsi_hw_interface::RSIState(in_buffer_);
-
 
 	for (size_t i = 0; i < hw_states_.size(); ++i){
 		hw_states_[i] = rsi_state_.positions[i] * 3.14159/180.0;
 		hw_commands_[i] = hw_states_[i];
 		rsi_initial_joint_positions_[i] = rsi_state_.initial_positions[i];
 	}
-
 	ipoc_ = rsi_state_.ipoc;
+
 	out_buffer_ = kuka_rsi_hw_interface::RSICommand(rsi_joint_position_corrections_, ipoc_).xml_doc;
 	server_->send(out_buffer_);
 	server_->set_timeout(1000); // Set receive timeout to 1 second
