@@ -20,7 +20,6 @@ find_package(ament_cmake REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(ros2_control_demo_hardware REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -30,7 +29,7 @@ add_subdirectory(../abb_libegm deps_libegm)
 add_library(
 	ros2_control_demo_driver
 	SHARED
-	src/robot6dof_demo_system.cpp
+	src/abb_system_position_only.cpp
 )
 target_include_directories(
 	ros2_control_demo_driver
@@ -48,7 +47,9 @@ ament_target_dependencies(
   pluginlib
   rclcpp
 )
-pluginlib_export_plugin_description_file(hardware_interface ros2_control_demo_driver.xml)
+
+pluginlib_export_plugin_description_file(hardware_interface
+										 ros2_control_demo_driver.xml)
 
 
 install(
@@ -73,7 +74,7 @@ if(BUILD_TESTING)
   # the following line skips cpplint (only works in a git repo)
   # uncomment the line when this package is not in a git repo
   #set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
+  #ament_lint_auto_find_test_dependencies()
 endif()
 
 ament_export_include_directories(
