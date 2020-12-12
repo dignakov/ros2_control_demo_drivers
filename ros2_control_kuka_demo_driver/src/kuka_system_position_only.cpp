@@ -75,6 +75,10 @@ return_type KukaSystemPositionOnlyHardware::configure(const hardware_interface::
 	remote_host_.resize(1024);
 	remote_port_.resize(1024);
 
+	rsi_initial_joint_positions_.resize(6, 0.0);
+	rsi_joint_position_corrections_.resize(6, 0.0),
+	ipoc_ = 0;
+
   	local_host_ = info_.hardware_parameters["listen_address"];
 	local_port_ = stoi(info_.hardware_parameters["listen_port"]);
 
@@ -131,12 +135,25 @@ return_type KukaSystemPositionOnlyHardware::start()  // QUESTION: should this be
 
 	int bytes = server_->recv(in_buffer_);
 
+	RCLCPP_INFO(rclcpp::get_logger("KukaSystemPositionOnlyHardware"),
+	"got some bytes");
+
 	// Drop empty <rob> frame with RSI <= 2.3
 	if(bytes < 100){
 		bytes = server_->recv(in_buffer_);
 	}
 
+	if(bytes < 100){
+		RCLCPP_FATAL(rclcpp::get_logger("KukaSystemPositionOnlyHardware"),
+		"not enough data received");
+		return return_type::ERROR;
+	}
+
+
+
 	rsi_state_ = kuka_rsi_hw_interface::RSIState(in_buffer_);
+
+
 	for (size_t i = 0; i < hw_states_.size(); ++i){
 		hw_states_[i] = rsi_state_.positions[i] * 3.14159/180.0;
 		hw_commands_[i] = hw_states_[i];
@@ -172,27 +189,36 @@ return_type KukaSystemPositionOnlyHardware::stop()
 
 return_type KukaSystemPositionOnlyHardware::read()
 {
-	RCLCPP_INFO(rclcpp::get_logger("KukaSystemPositionOnlyHardware"),
-	"read()");
+	RCLCPP_INFO(rclcpp::get_logger("KukaSystemPositionOnlyHardware"), "read()");
 
+	in_buffer_.resize(1024);
+	if (server_->recv(in_buffer_) == 0){
+		return return_type::ERROR;
+	}
+
+	rsi_state_ = kuka_rsi_hw_interface::RSIState(in_buffer_);
 
   	for (size_t i = 0; i < hw_states_.size(); i++) {
-		hw_states_[i] = 0.0;
+		hw_states_[i] = rsi_state_.positions[i] * 3.14159/180.0;
     	RCLCPP_INFO(rclcpp::get_logger("KukaSystemPositionOnlyHardware"), "Got state %.5f for joint %d!",hw_states_[i], i);
   	}
+	ipoc_ = rsi_state_.ipoc;
 
 	return return_type::OK;
 }
 
 return_type KukaSystemPositionOnlyHardware::write()
 {
-	RCLCPP_INFO(rclcpp::get_logger("KukaSystemPositionOnlyHardware"),
-	"write()");
+	RCLCPP_INFO(rclcpp::get_logger("KukaSystemPositionOnlyHardware"), "write()");
 
+	out_buffer_.resize(1024);
 
   	for (size_t i = 0; i < hw_commands_.size(); i++) {
     	RCLCPP_INFO(rclcpp::get_logger("KukaSystemPositionOnlyHardware"), "Got command %.5f for joint %d!",hw_commands_[i], i);
+		rsi_joint_position_corrections_[i] = (hw_commands_[i]*180.0/3.14159) - rsi_initial_joint_positions_[i];
   	}
+	out_buffer_ = kuka_rsi_hw_interface::RSICommand(rsi_joint_position_corrections_, ipoc_).xml_doc;
+	server_->send(out_buffer_);
 
 	return return_type::OK;
 }

@@ -7,7 +7,7 @@
       <hardware>
         <plugin>ros2_control_kuka_demo_driver/KukaSystemPositionOnlyHardware</plugin>
         <param name="listen_address">127.0.0.1</param>
-        <param name="listen_port">6511</param>
+        <param name="listen_port">49152</param>
       </hardware>
       <joint name="${prefix}joint_a1">
         <command_interface name="position">
