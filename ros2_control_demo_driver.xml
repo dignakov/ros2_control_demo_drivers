@@ -1,9 +1,0 @@
-<library path="ros2_control_demo_driver">
-  <class name="ros2_control_demo_driver/ABBSystemPositionOnlyHardware"
-         type="ros2_control_demo_driver::ABBSystemPositionOnlyHardware"
-         base_class_type="hardware_interface::SystemInterface">
-    <description>
-		ROS2 Control demo driver(s).
-    </description>
-  </class>
-</library>

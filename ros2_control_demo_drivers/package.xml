@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>ros2_control_demo_drivers</name>
+  <version>0.0.1</version>
+  <description>Metapackage for ros2_control demo driver packages</description>
+
+  <author email="dmitri.ignakov@taigarobotics.com">Dmitri</author>
+  <maintainer email="dmitri.ignakov@taigarobotics.com">Dmitri</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <!--<exec_depend></exec_depend>-->
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

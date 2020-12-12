@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //#include "ros2_control_demo_driver/robot6dof_demo_system.hpp"
-#include "ros2_control_demo_driver/abb_system_position_only.hpp"
+#include "ros2_control_abb_demo_driver/abb_system_position_only.hpp"
 
 #include <thread>
 #include <chrono>
@@ -29,7 +29,7 @@
 using namespace std::chrono_literals;
 
 
-namespace ros2_control_demo_driver
+namespace ros2_control_abb_demo_driver
 {
 
 return_type ABBSystemPositionOnlyHardware::configure(const hardware_interface::HardwareInfo &info)
@@ -251,13 +251,13 @@ return_type ABBSystemPositionOnlyHardware::write()
 
 
 
-} //namespace ros2_control_demo_driver
+} //namespace ros2_control_abb_demo_driver
 
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-	ros2_control_demo_driver::ABBSystemPositionOnlyHardware,
+	ros2_control_abb_demo_driver::ABBSystemPositionOnlyHardware,
 	hardware_interface::SystemInterface
 )
 

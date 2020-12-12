@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(ros2_control_demo_driver)
+project(ros2_control_abb_demo_driver)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -24,36 +24,36 @@ find_package(rclcpp REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
-add_subdirectory(../abb_libegm deps_libegm)
+add_subdirectory(../../abb_libegm deps_libegm)
 
 add_library(
-	ros2_control_demo_driver
+	${PROJECT_NAME}
 	SHARED
 	src/abb_system_position_only.cpp
 )
 target_include_directories(
-	ros2_control_demo_driver
+	${PROJECT_NAME}
 	PRIVATE
 	include
 )
 # NOT SURE IF THIS IS THE RIGHT WAY TO DO THIS...
 target_link_libraries(
-	ros2_control_demo_driver
+	${PROJECT_NAME}
 	abb_libegm
 )
 ament_target_dependencies(
-  ros2_control_demo_driver
+  ${PROJECT_NAME}
   hardware_interface
   pluginlib
   rclcpp
 )
 
 pluginlib_export_plugin_description_file(hardware_interface
-										 ros2_control_demo_driver.xml)
+										 ros2_control_abb_demo_driver.xml)
 
 
 install(
-  TARGETS ros2_control_demo_driver
+  TARGETS ${PROJECT_NAME}
   DESTINATION lib
 )
 install(
@@ -81,7 +81,7 @@ ament_export_include_directories(
   include
 )
 ament_export_libraries(
-	ros2_control_demo_driver
+  ${PROJECT_NAME}
 )
 ament_export_dependencies(
   hardware_interface
