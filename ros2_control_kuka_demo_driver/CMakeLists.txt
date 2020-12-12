@@ -20,7 +20,7 @@ find_package(ament_cmake REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(TinyXML2 REQUIRED)
+#find_package(tinyxml REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -34,6 +34,11 @@ target_include_directories(
 	${PROJECT_NAME}
 	PRIVATE
 	include
+)
+
+target_link_libraries(
+	${PROJECT_NAME}
+	tinyxml
 )
 
 ament_target_dependencies(
