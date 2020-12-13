@@ -27,7 +27,7 @@ colcon_ws/src
 For testing, this needs a real robot or RobotWare compatible with libegm. More details will be added soon.
 
 ## Kuka Driver:
-The minimal fork for ros2 has a, somewhat rough, adaptation of the RSI simulator. It can be used to test the driver by callig:
+The minimal ros2 fork of kuka_experimental has a, somewhat rough, adaptation of the RSI simulator. It can be used to test the driver by callig:
 ```
 ros2 run kuka_rsi_simulator kuka_rsi_simulator
 ```
